@@ -11325,3 +11325,337 @@ textarea {
 .dashboard-page textarea {
   font-family: "Segoe UI", Arial, Helvetica, sans-serif !important;
 }
+
+/* =========================================================
+   FINAL MOBILE NAVIGATION FIX
+   ========================================================= */
+
+@media (max-width: 760px) {
+
+  /* Prevent the page itself from creating horizontal overflow */
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Mobile sidebar */
+  .dashboard-page .sidebar {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 10px 8px 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* YES BANK logo */
+  .dashboard-page .sidebar-logo {
+    width: 100%;
+    height: 56px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid #e8edf3;
+  }
+
+  .dashboard-page .sidebar-logo img {
+    width: 155px;
+    max-width: 60%;
+    height: auto;
+  }
+
+  /* Hide desktop-only elements */
+  .dashboard-page .sidebar-divider,
+  .dashboard-page .sidebar-security,
+  .dashboard-page .sidebar-bottom {
+    display: none !important;
+  }
+
+  /* Navigation row */
+  .dashboard-page .sidebar-nav {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0;
+    padding: 6px 0 0;
+    margin: 0;
+  }
+
+  /* Remove MAIN MENU */
+  .dashboard-page .sidebar-nav::before {
+    display: none !important;
+  }
+
+  /* Each navigation item */
+  .dashboard-page .nav-item {
+    width: 100%;
+    min-width: 0;
+    height: 68px;
+    min-height: 68px;
+
+    padding: 7px 2px 6px;
+    margin: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 4px;
+
+    border-radius: 10px 10px 0 0;
+
+    text-align: center;
+    white-space: normal;
+
+    color: #64748b;
+
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+
+    line-height: 1.15;
+
+    overflow: hidden;
+  }
+
+  /* IMPORTANT:
+     The old CSS was giving every span width: 22px.
+     Only the icon should have a fixed width.
+  */
+  .dashboard-page .nav-item > span:not(.nav-icon) {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100%;
+    height: auto !important;
+
+    display: block;
+
+    font-size: 10px !important;
+    line-height: 1.15;
+
+    text-align: center;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* Navigation icons */
+  .dashboard-page .nav-item .nav-icon {
+    width: 25px !important;
+    min-width: 25px !important;
+    height: 25px !important;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 19px !important;
+    line-height: 1;
+  }
+
+  /* Active item */
+  .dashboard-page .nav-item.active {
+    background: #edf4ff;
+    color: #1454c7;
+  }
+
+  .dashboard-page .nav-item.active::before {
+    top: auto;
+    bottom: 0;
+    left: 18%;
+    right: 18%;
+
+    width: auto;
+    height: 3px;
+
+    border-radius: 4px 4px 0 0;
+    background: #1454c7;
+  }
+
+  /* Main content */
+  .dashboard-page .dashboard-main {
+    width: 100%;
+    margin-left: 0;
+
+    padding: 20px 14px 30px;
+
+    overflow: hidden;
+  }
+
+  /* Header */
+  .dashboard-page .dashboard-header {
+    width: 100%;
+    gap: 12px;
+  }
+
+  .dashboard-page .dashboard-welcome {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .dashboard-page .dashboard-welcome h1 {
+    font-size: 25px !important;
+    line-height: 1.2 !important;
+  }
+
+  .dashboard-page .dashboard-welcome h1 span {
+    display: block;
+  }
+
+  .dashboard-page .welcome-date {
+    font-size: 11px !important;
+  }
+
+  /* Header profile */
+  .dashboard-page .dashboard-header-right {
+    flex-shrink: 0;
+  }
+
+  .dashboard-page .profile-details {
+    display: none !important;
+  }
+
+  /* Balance */
+  .dashboard-page .balance-hero {
+    width: 100%;
+    min-height: 0;
+
+    padding: 24px 20px;
+
+    border-radius: 18px;
+  }
+
+  .dashboard-page .balance-value {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+
+    margin: 10px 0 18px;
+  }
+
+  .dashboard-page .balance-value span {
+    font-size: 20px !important;
+  }
+
+  .dashboard-page .balance-value strong {
+    font-size: clamp(26px, 8vw, 34px) !important;
+    letter-spacing: -1px;
+  }
+
+  .dashboard-page .balance-account {
+    width: 100%;
+    max-width: 100%;
+
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+
+    gap: 7px;
+  }
+
+  .dashboard-page .balance-side {
+    width: 100%;
+    margin-top: 18px;
+    padding-top: 14px;
+  }
+
+  /* Quick Actions */
+  .dashboard-page .quick-actions {
+    width: 100%;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .dashboard-page .premium-action-card {
+    width: 100%;
+    min-height: 78px;
+    padding: 14px;
+
+    align-items: center;
+  }
+
+  .dashboard-page .action-card-content {
+    min-width: 0;
+  }
+
+  .dashboard-page .action-card-content h3 {
+    font-size: 12px !important;
+  }
+
+  .dashboard-page .action-card-content p {
+    font-size: 10px !important;
+  }
+
+  .dashboard-page .action-arrow {
+    display: block;
+    right: 15px;
+  }
+
+  /* Statistics */
+  .dashboard-page .dashboard-stats {
+    width: 100%;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  /* Recent transactions */
+  .dashboard-page .dashboard-two-column {
+    width: 100%;
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-page .transaction-info {
+    min-width: 0;
+  }
+
+  .dashboard-page .transaction-info strong {
+    max-width: 180px;
+    font-size: 12px;
+  }
+
+  .dashboard-page .transaction-right > strong {
+    font-size: 11px;
+  }
+
+  /* Account information */
+  .dashboard-page .account-information-grid {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+/* =========================================================
+   EXTRA SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 380px) {
+
+  .dashboard-page .nav-item {
+    font-size: 9px !important;
+  }
+
+  .dashboard-page .nav-item > span:not(.nav-icon) {
+    font-size: 9px !important;
+  }
+
+  .dashboard-page .nav-item .nav-icon {
+    font-size: 18px !important;
+  }
+
+  .dashboard-page .sidebar-logo img {
+    width: 145px;
+  }
+
+  .dashboard-page .dashboard-welcome h1 {
+    font-size: 22px !important;
+  }
+
+  .dashboard-page .balance-value strong {
+    font-size: 25px !important;
+  }
+}
