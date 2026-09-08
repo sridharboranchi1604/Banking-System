@@ -109,6 +109,32 @@ function Dashboard() {
     return `•••• •••• ${account.slice(-4)}`;
   };
 
+  // Mask PAN - show only last 4 characters
+  const maskPAN = (pan) => {
+    if (!pan) return "-";
+
+    const value = String(pan);
+
+    if (value.length <= 4) {
+      return value;
+    }
+
+    return `XXXXXX${value.slice(-4)}`;
+  };
+
+  // Mask Aadhaar - show only last 4 digits
+  const maskAadhaar = (aadhaar) => {
+    if (!aadhaar) return "-";
+
+    const value = String(aadhaar).replace(/\s/g, "");
+
+    if (value.length <= 4) {
+      return value;
+    }
+
+    return `XXXX XXXX ${value.slice(-4)}`;
+  };
+
   const totalTransferred = transactions.reduce(
     (total, transaction) =>
       total + Number(transaction.amount || 0),
@@ -760,10 +786,12 @@ function Dashboard() {
 
               <div className="security-item">
                 <span>✓</span>
+
                 <div>
                   <strong>
                     Account Status
                   </strong>
+
                   <small>
                     Active
                   </small>
@@ -772,10 +800,12 @@ function Dashboard() {
 
               <div className="security-item">
                 <span>✓</span>
+
                 <div>
                   <strong>
                     Account Type
                   </strong>
+
                   <small>
                     {user?.accountType ||
                       "Savings Account"}
@@ -785,10 +815,12 @@ function Dashboard() {
 
               <div className="security-item">
                 <span>✓</span>
+
                 <div>
                   <strong>
                     Bank
                   </strong>
+
                   <small>
                     YES BANK
                   </small>
@@ -842,6 +874,7 @@ function Dashboard() {
               </strong>
             </div>
 
+
             <div>
               <span>
                 ACCOUNT TYPE
@@ -853,6 +886,7 @@ function Dashboard() {
               </strong>
             </div>
 
+
             <div>
               <span>
                 BANK
@@ -863,6 +897,51 @@ function Dashboard() {
               </strong>
             </div>
 
+
+            <div>
+              <span>
+                BRANCH
+              </span>
+
+              <strong>
+                {user?.branch || "-"}
+              </strong>
+            </div>
+
+
+            <div>
+              <span>
+                PAN
+              </span>
+
+              <strong>
+                {maskPAN(user?.pan)}
+              </strong>
+            </div>
+
+
+            <div>
+              <span>
+                AADHAAR
+              </span>
+
+              <strong>
+                {maskAadhaar(user?.aadhaar)}
+              </strong>
+            </div>
+
+
+            <div>
+              <span>
+                MOBILE
+              </span>
+
+              <strong>
+                {user?.phone || "-"}
+              </strong>
+            </div>
+
+
             <div>
               <span>
                 STATUS
@@ -871,6 +950,19 @@ function Dashboard() {
               <strong className="status-active">
                 ● Active
               </strong>
+            </div>
+
+
+            <div className="account-address">
+
+              <span>
+                ADDRESS
+              </span>
+
+              <strong>
+                {user?.address || "-"}
+              </strong>
+
             </div>
 
           </div>

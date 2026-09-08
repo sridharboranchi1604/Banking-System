@@ -1,61 +1,36 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
-import yesBankLogo from "../assets/yesbank-logo.png";
+import logo from "../assets/yesbank-logo.png";
 
 function Transfer() {
   const navigate = useNavigate();
 
+  const [user, setUser] = useState(null);
   const [payees, setPayees] = useState([]);
-  const [balance, setBalance] = useState(0);
 
   const [payeeId, setPayeeId] = useState("");
   const [amount, setAmount] = useState("");
+  const [transferType, setTransferType] = useState("");
   const [description, setDescription] = useState("");
+
+  const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [transferring, setTransferring] = useState(false);
 
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+
+  // Confirmation modal
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  // Receipt modal
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [receipt, setReceipt] = useState(null);
 
   const token = localStorage.getItem("bankingToken");
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const headers = {
-          Authorization: `Bearer ${token}`,
-        };
-
-        const payeeResponse = await api.get("/payees", {
-          headers,
-        });
-
-        setPayees(payeeResponse.data.payees || []);
-
-        const userResponse = await api.get("/users/me", {
-          headers,
-        });
-
-        const user = userResponse.data.user || userResponse.data;
-
-        setBalance(Number(user.balance || 0));
-      } catch (err) {
-        console.error("Transfer page loading error:", err);
-
-        setError(
-          err.response?.data?.message ||
-            "Unable to load account information."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (!token) {
       navigate("/login");
       return;
@@ -64,26 +39,129 @@ function Transfer() {
     loadData();
   }, [navigate, token]);
 
-  const handleTransfer = async (e) => {
+  const loadData = async () => {
+    try {
+      setLoading(true);
+
+      const [userResponse, payeeResponse] = await Promise.all([
+        api.get("/users/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+
+        api.get("/payees", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+      ]);
+
+      setUser(userResponse.data.user);
+      setPayees(payeeResponse.data.payees || []);
+    } catch (err) {
+      console.error(err);
+
+      if (err.response?.status === 401) {
+        localStorage.removeItem("bankingToken");
+        localStorage.removeItem("bankingUser");
+        navigate("/login");
+        return;
+      }
+
+      setError(
+        err.response?.data?.message ||
+          "Unable to load transfer information."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatAmount = (value) => {
+    return Number(value || 0).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
+  const formatDate = (date) => {
+    if (!date) return "-";
+
+    return new Date(date).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (date) => {
+    if (!date) return "-";
+
+    return new Date(date).toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const maskAccountNumber = (accountNumber) => {
+    if (!accountNumber) return "-";
+
+    const value = String(accountNumber);
+
+    if (value.length <= 4) {
+      return value;
+    }
+
+    return `${"X".repeat(value.length - 4)}${value.slice(-4)}`;
+  };
+
+  const selectedPayee = payees.find(
+    (payee) => payee._id === payeeId
+  );
+
+  // Step 1: Validate transfer and open confirmation modal
+  const handleTransferSubmit = (e) => {
     e.preventDefault();
 
     setError("");
-    setSuccess("");
-
-    const transferAmount = Number(amount);
 
     if (!payeeId) {
       setError("Please select a payee.");
       return;
     }
 
-    if (!amount || transferAmount <= 0) {
-      setError("Please enter a valid amount.");
+    if (!amount || Number(amount) <= 0) {
+      setError("Please enter a valid transfer amount.");
       return;
     }
 
-    if (transferAmount > balance) {
-      setError("Insufficient balance.");
+    if (!transferType) {
+      setError("Please select a transfer type.");
+      return;
+    }
+
+    if (
+      user &&
+      Number(amount) > Number(user.balance)
+    ) {
+      setError("Insufficient balance for this transfer.");
+      return;
+    }
+
+    setPassword("");
+    setShowConfirm(true);
+  };
+
+  // Step 2: Confirm transfer with password
+  const handleConfirmTransfer = async (e) => {
+    e.preventDefault();
+
+    setError("");
+
+    if (!password) {
+      setError("Please enter your login password.");
       return;
     }
 
@@ -94,8 +172,10 @@ function Transfer() {
         "/transactions/transfer",
         {
           payeeId,
-          amount: transferAmount,
-          description: description.trim() || "Money Transfer",
+          amount: Number(amount),
+          transferType,
+          description,
+          password,
         },
         {
           headers: {
@@ -106,23 +186,45 @@ function Transfer() {
 
       const transaction = response.data.transaction;
 
-      if (response.data.balance !== undefined) {
-        setBalance(Number(response.data.balance));
-      } else {
-        setBalance((prev) => prev - transferAmount);
-      }
+      // Update balance immediately
+      setUser((previousUser) => ({
+        ...previousUser,
+        balance: response.data.balance,
+      }));
 
-      setSuccess(
-        `Transfer successful! Reference ID: ${
-          transaction?.referenceId || "Generated"
-        }`
-      );
+      // Save receipt information
+      setReceipt({
+        transaction,
+        payee: selectedPayee,
+        amount: Number(amount),
+        transferType,
+        description:
+          description?.trim() || "Money Transfer",
+        balance: response.data.balance,
+      });
 
+      // Close password confirmation
+      setShowConfirm(false);
+
+      // Clear form
       setPayeeId("");
       setAmount("");
+      setTransferType("");
       setDescription("");
+      setPassword("");
+
+      // Open receipt
+      setShowReceipt(true);
     } catch (err) {
-      console.error("Transfer error:", err);
+      console.error(err);
+
+      if (err.response?.status === 401) {
+        setError(
+          err.response?.data?.message ||
+            "Incorrect password. Transfer cancelled."
+        );
+        return;
+      }
 
       setError(
         err.response?.data?.message ||
@@ -133,36 +235,28 @@ function Transfer() {
     }
   };
 
+  const closeReceipt = () => {
+    setShowReceipt(false);
+    setReceipt(null);
+    setError("");
+  };
+
+  const printReceipt = () => {
+    window.print();
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("bankingToken");
     localStorage.removeItem("bankingUser");
-
     navigate("/login");
   };
 
-  const selectedPayee = payees.find(
-    (payee) => payee._id === payeeId
-  );
-
-  const formatAmount = (value) =>
-    Number(value || 0).toLocaleString("en-IN", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-
   if (loading) {
     return (
-      <div className="banking-loading">
-        <div className="loading-card">
-          <img
-            src={yesBankLogo}
-            alt="YES BANK"
-            className="loading-logo"
-          />
-
+      <div className="dashboard-page">
+        <div className="dashboard-loading">
           <div className="loading-spinner"></div>
-
-          <p>Loading your account...</p>
+          <p>Loading transfer...</p>
         </div>
       </div>
     );
@@ -176,8 +270,10 @@ function Transfer() {
       <aside className="sidebar">
 
         <div className="sidebar-logo">
-          <img src={yesBankLogo} alt="YES BANK" />
+          <img src={logo} alt="YES BANK" />
         </div>
+
+        <div className="sidebar-divider"></div>
 
         <nav className="sidebar-nav">
 
@@ -185,148 +281,108 @@ function Transfer() {
             className="nav-item"
             onClick={() => navigate("/dashboard")}
           >
-            <span>⌂</span>
-            Dashboard
+            <span className="nav-icon">⌂</span>
+            <span>Dashboard</span>
           </button>
 
           <button
             className="nav-item"
             onClick={() => navigate("/account")}
           >
-            <span>👤</span>
-            My Account
-          </button>
-
-          <button
-            className="nav-item active"
-            onClick={() => navigate("/transfer")}
-          >
-            <span>↗</span>
-            Transfer Money
+            <span className="nav-icon">◉</span>
+            <span>Account</span>
           </button>
 
           <button
             className="nav-item"
             onClick={() => navigate("/payees")}
           >
-            <span>👥</span>
-            Payees
+            <span className="nav-icon">♙</span>
+            <span>Payees</span>
+          </button>
+
+          <button className="nav-item active">
+            <span className="nav-icon">↗</span>
+            <span>Transfer</span>
           </button>
 
           <button
             className="nav-item"
             onClick={() => navigate("/transactions")}
           >
-            <span>▤</span>
-            Transactions
+            <span className="nav-icon">☷</span>
+            <span>Transactions</span>
           </button>
 
         </nav>
 
         <div className="sidebar-security">
-          <div className="security-icon">
-            🔒
-          </div>
-
+          <span>🔒</span>
           <div>
             <strong>Secure Banking</strong>
-            <span>Your connection is protected</span>
+            <small>Protected connection</small>
           </div>
         </div>
 
-        <button
-          className="logout-button"
-          onClick={handleLogout}
-        >
-          <span>↪</span>
-          Logout
-        </button>
+        <div className="sidebar-bottom">
+          <button
+            className="logout-btn"
+            onClick={handleLogout}
+          >
+            <span>↪</span>
+            Logout
+          </button>
+        </div>
 
       </aside>
-
 
       {/* ================= MAIN ================= */}
 
       <main className="dashboard-main">
 
-        {/* HEADER */}
-
         <header className="dashboard-header">
 
-          <div>
-            <p className="welcome-small">
-              Payments & Transfers
+          <div className="dashboard-welcome">
+            <p className="welcome-label">
+              MONEY TRANSFER
             </p>
 
-            <h1>Transfer Money</h1>
+            <h1>
+              Transfer <span>Money</span>
+            </h1>
+
+            <p className="welcome-date">
+              Send money securely to your registered payee
+            </p>
           </div>
 
-          <div className="profile-circle">
-            P
+          <div className="dashboard-header-right">
+            <div className="profile-avatar">
+              {user?.name?.charAt(0)?.toUpperCase() || "U"}
+            </div>
+
+            <div className="profile-details">
+              <strong>{user?.name || "User"}</strong>
+              <span>Personal Banking</span>
+            </div>
           </div>
 
         </header>
-
-
-        {/* ================= TRANSFER HERO ================= */}
-
-        <section className="transfer-hero">
-
-          <div className="transfer-hero-content">
-
-            <div className="transfer-hero-icon">
-              ↗
-            </div>
-
-            <div>
-
-              <p className="transfer-eyebrow">
-                SECURE MONEY TRANSFER
-              </p>
-
-              <h2>
-                Send money with confidence
-              </h2>
-
-              <p>
-                Transfer funds securely to your saved
-                beneficiaries anytime.
-              </p>
-
-            </div>
-
-          </div>
-
-          <div className="transfer-security">
-
-            <span>🔒</span>
-
-            <div>
-              <strong>Bank-grade security</strong>
-              <small>Protected transaction</small>
-            </div>
-
-          </div>
-
-        </section>
-
 
         {/* ================= BALANCE ================= */}
 
         <section className="transfer-balance-card">
 
           <div>
-
-            <span>AVAILABLE BALANCE</span>
+            <p>AVAILABLE BALANCE</p>
 
             <h2>
-              ₹{formatAmount(balance)}
+              ₹ {formatAmount(user?.balance)}
             </h2>
 
-            <p>
-              Available for immediate transfer
-            </p>
-
+            <span>
+              Available for transfer
+            </span>
           </div>
 
           <div className="transfer-balance-icon">
@@ -335,355 +391,515 @@ function Transfer() {
 
         </section>
 
-
-        {/* ================= MESSAGES ================= */}
+        {/* ================= ERROR ================= */}
 
         {error && (
-          <div className="transfer-message error">
-            <span>!</span>
-            <div>
-              <strong>Transfer issue</strong>
-              <p>{error}</p>
-            </div>
+          <div className="transfer-error">
+            <span>⚠</span>
+            {error}
           </div>
         )}
 
-        {success && (
-          <div className="transfer-message success">
-            <span>✓</span>
+        {/* ================= TRANSFER FORM ================= */}
+
+        <section className="transfer-card">
+
+          <div className="transfer-card-header">
             <div>
-              <strong>Transfer successful</strong>
-              <p>{success}</p>
+              <p className="section-label">
+                PAYMENT
+              </p>
+
+              <h2>Make a Transfer</h2>
+
+              <p>
+                Select a registered payee and enter the
+                transfer details.
+              </p>
+            </div>
+
+            <div className="secure-badge">
+              🔒 Secure
             </div>
           </div>
-        )}
 
+          {payees.length === 0 ? (
 
-        {/* ================= MAIN TRANSFER AREA ================= */}
-
-        <section className="transfer-layout">
-
-          {/* FORM */}
-
-          <div className="transfer-card">
-
-            <div className="transfer-card-header">
-
-              <div>
-                <p className="section-eyebrow">
-                  NEW TRANSFER
-                </p>
-
-                <h2>Make a Transfer</h2>
-
-                <p>
-                  Select a beneficiary and enter
-                  the amount you want to send.
-                </p>
+            <div className="no-payees">
+              <div className="no-payees-icon">
+                ♙
               </div>
 
-              <div className="transfer-form-icon">
-                ₹
-              </div>
+              <h3>No Payees Available</h3>
 
+              <p>
+                Add a payee before making a money transfer.
+              </p>
+
+              <button
+                onClick={() => navigate("/payees")}
+                className="primary-transfer-btn"
+              >
+                Add Payee
+              </button>
             </div>
 
+          ) : (
 
-            {payees.length === 0 ? (
+            <form
+              className="transfer-form"
+              onSubmit={handleTransferSubmit}
+            >
 
-              <div className="no-payees">
+              {/* PAYEE */}
 
-                <div className="no-payees-icon">
-                  👥
+              <div className="form-group">
+
+                <label>Select Payee</label>
+
+                <select
+                  value={payeeId}
+                  onChange={(e) => {
+                    setPayeeId(e.target.value);
+                    setError("");
+                  }}
+                >
+                  <option value="">
+                    Select a registered payee
+                  </option>
+
+                  {payees.map((payee) => (
+                    <option
+                      key={payee._id}
+                      value={payee._id}
+                    >
+                      {payee.name} —{" "}
+                      {maskAccountNumber(
+                        payee.accountNumber
+                      )}
+                    </option>
+                  ))}
+                </select>
+
+              </div>
+
+              {/* SELECTED PAYEE */}
+
+              {selectedPayee && (
+                <div className="selected-payee">
+
+                  <div className="selected-payee-avatar">
+                    {selectedPayee.name
+                      ?.charAt(0)
+                      ?.toUpperCase()}
+                  </div>
+
+                  <div className="selected-payee-info">
+                    <strong>
+                      {selectedPayee.name}
+                    </strong>
+
+                    <span>
+                      {selectedPayee.bankName ||
+                        "Bank Account"}
+                    </span>
+
+                    <small>
+                      A/C{" "}
+                      {maskAccountNumber(
+                        selectedPayee.accountNumber
+                      )}{" "}
+                      • {selectedPayee.ifsc}
+                    </small>
+                  </div>
+
+                  <span className="payee-verified">
+                    ✓ Verified
+                  </span>
+
+                </div>
+              )}
+
+              {/* AMOUNT */}
+
+              <div className="form-row">
+
+                <div className="form-group">
+
+                  <label>Transfer Amount</label>
+
+                  <div className="amount-input-wrapper">
+                    <span>₹</span>
+
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={amount}
+                      onChange={(e) => {
+                        setAmount(e.target.value);
+                        setError("");
+                      }}
+                    />
+                  </div>
+
                 </div>
 
-                <p className="section-eyebrow">
-                  BENEFICIARY REQUIRED
-                </p>
+                {/* TRANSFER TYPE */}
 
-                <h3>No Payees Available</h3>
+                <div className="form-group">
 
-                <p>
-                  Add a payee before making a money
-                  transfer.
-                </p>
-
-                <button
-                  className="primary-button"
-                  onClick={() => navigate("/payees")}
-                >
-                  + Add Payee
-                </button>
-
-              </div>
-
-            ) : (
-
-              <form onSubmit={handleTransfer}>
-
-                {/* PAYEE */}
-
-                <div className="form-group transfer-field">
-
-                  <label htmlFor="payee">
-                    Select Payee
-                  </label>
+                  <label>Transfer Type</label>
 
                   <select
-                    id="payee"
-                    value={payeeId}
-                    onChange={(e) =>
-                      setPayeeId(e.target.value)
-                    }
-                    required
+                    value={transferType}
+                    onChange={(e) => {
+                      setTransferType(e.target.value);
+                      setError("");
+                    }}
                   >
                     <option value="">
-                      Select a saved payee
+                      Select transfer type
                     </option>
 
-                    {payees.map((payee) => (
-                      <option
-                        key={payee._id}
-                        value={payee._id}
-                      >
-                        {payee.name} — {payee.bankName}
-                      </option>
-                    ))}
+                    <option value="IMPS">
+                      IMPS
+                    </option>
+
+                    <option value="NEFT">
+                      NEFT
+                    </option>
+
+                    <option value="RTGS">
+                      RTGS
+                    </option>
                   </select>
 
                 </div>
 
+              </div>
 
-                {/* SELECTED PAYEE */}
+              {/* DESCRIPTION */}
 
-                {selectedPayee && (
+              <div className="form-group">
 
-                  <div className="selected-payee">
+                <label>
+                  Description
+                  <span className="optional">
+                    Optional
+                  </span>
+                </label>
 
-                    <div className="selected-payee-header">
+                <input
+                  type="text"
+                  placeholder="Enter transfer description"
+                  value={description}
+                  onChange={(e) =>
+                    setDescription(e.target.value)
+                  }
+                  maxLength={100}
+                />
 
-                      <div className="selected-payee-avatar">
-                        {selectedPayee.name
-                          .charAt(0)
-                          .toUpperCase()}
-                      </div>
+              </div>
 
-                      <div>
+              {/* SECURITY */}
 
-                        <span>TRANSFER TO</span>
+              <div className="transfer-security-note">
 
-                        <strong>
-                          {selectedPayee.name}
-                        </strong>
+                <span>🔐</span>
 
-                        <small>
-                          {selectedPayee.bankName}
-                        </small>
+                <div>
+                  <strong>
+                    Password confirmation required
+                  </strong>
 
-                      </div>
-
-                      <div className="verified-badge">
-                        ✓ Verified
-                      </div>
-
-                    </div>
-
-                    <div className="selected-payee-details">
-
-                      <div>
-                        <span>ACCOUNT NUMBER</span>
-                        <strong>
-                          {selectedPayee.accountNumber}
-                        </strong>
-                      </div>
-
-                      <div>
-                        <span>IFSC CODE</span>
-                        <strong>
-                          {selectedPayee.ifsc}
-                        </strong>
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                )}
-
-
-                {/* AMOUNT */}
-
-                <div className="form-group transfer-field">
-
-                  <div className="label-row">
-
-                    <label htmlFor="amount">
-                      Transfer Amount
-                    </label>
-
-                    <span>
-                      Available ₹{formatAmount(balance)}
-                    </span>
-
-                  </div>
-
-                  <div className="amount-input">
-
-                    <span>₹</span>
-
-                    <input
-                      id="amount"
-                      type="number"
-                      min="1"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={amount}
-                      onChange={(e) =>
-                        setAmount(e.target.value)
-                      }
-                      required
-                    />
-
-                  </div>
-
+                  <p>
+                    Your login password will be required
+                    before the transfer is processed.
+                  </p>
                 </div>
 
-
-                {/* DESCRIPTION */}
-
-                <div className="form-group transfer-field">
-
-                  <label htmlFor="description">
-                    Description
-                    <span className="optional">
-                      Optional
-                    </span>
-                  </label>
-
-                  <input
-                    id="description"
-                    type="text"
-                    placeholder="e.g. Monthly payment"
-                    maxLength="100"
-                    value={description}
-                    onChange={(e) =>
-                      setDescription(e.target.value)
-                    }
-                  />
-
-                </div>
-
-
-                {/* BUTTON */}
-
-                <button
-                  type="submit"
-                  className="transfer-button"
-                  disabled={transferring}
-                >
-
-                  {transferring ? (
-                    <>
-                      <span className="button-spinner"></span>
-                      Processing Transfer...
-                    </>
-                  ) : (
-                    <>
-                      Transfer Money
-                      <span>→</span>
-                    </>
-                  )}
-
-                </button>
-
-              </form>
-
-            )}
-
-          </div>
-
-
-          {/* SIDE INFORMATION */}
-
-          <aside className="transfer-info-card">
-
-            <div className="transfer-info-icon">
-              🔐
-            </div>
-
-            <p className="section-eyebrow">
-              SECURE TRANSFER
-            </p>
-
-            <h3>
-              Your money is protected
-            </h3>
-
-            <p>
-              Every transfer is processed through
-              authenticated banking services.
-            </p>
-
-
-            <div className="transfer-info-list">
-
-              <div>
-                <span>✓</span>
-                <p>Secure authentication</p>
               </div>
 
-              <div>
-                <span>✓</span>
-                <p>Verified beneficiaries</p>
-              </div>
+              {/* SUBMIT */}
 
-              <div>
-                <span>✓</span>
-                <p>Instant transaction record</p>
-              </div>
+              <button
+                type="submit"
+                className="primary-transfer-btn"
+              >
+                <span>Transfer Money</span>
+                <span>→</span>
+              </button>
 
-              <div>
-                <span>✓</span>
-                <p>Unique reference ID</p>
-              </div>
+            </form>
 
-            </div>
-
-
-            <div className="transfer-help">
-
-              <span>?</span>
-
-              <div>
-                <strong>Need help?</strong>
-                <p>
-                  Review your payee details before
-                  confirming the transfer.
-                </p>
-              </div>
-
-            </div>
-
-          </aside>
+          )}
 
         </section>
 
-
-        {/* FOOTER */}
+        {/* ================= FOOTER ================= */}
 
         <footer className="dashboard-footer">
-
-          <span>
-            YES BANK Digital Banking
-          </span>
-
-          <span>
-            Secure • Simple • Connected
-          </span>
-
+          <span>YES BANK • Personal Banking</span>
+          <span>Secure • Simple • Smart</span>
         </footer>
 
       </main>
+
+      {/* =====================================================
+          PASSWORD CONFIRMATION MODAL
+          ===================================================== */}
+
+      {showConfirm && (
+
+        <div className="modal-overlay">
+
+          <div className="transfer-confirm-modal">
+
+            <button
+              className="modal-close"
+              onClick={() => {
+                if (!transferring) {
+                  setShowConfirm(false);
+                  setPassword("");
+                  setError("");
+                }
+              }}
+            >
+              ×
+            </button>
+
+            <div className="confirm-icon">
+              🔐
+            </div>
+
+            <p className="section-label">
+              CONFIRM TRANSFER
+            </p>
+
+            <h2>Authorize Payment</h2>
+
+            <p className="confirm-subtitle">
+              Enter your login password to authorize
+              this transfer.
+            </p>
+
+            {/* TRANSFER SUMMARY */}
+
+            <div className="confirm-summary">
+
+              <div>
+                <span>Payee</span>
+                <strong>
+                  {selectedPayee?.name || "-"}
+                </strong>
+              </div>
+
+              <div>
+                <span>Amount</span>
+                <strong>
+                  ₹ {formatAmount(amount)}
+                </strong>
+              </div>
+
+              <div>
+                <span>Transfer Type</span>
+                <strong>
+                  {transferType}
+                </strong>
+              </div>
+
+            </div>
+
+            <form onSubmit={handleConfirmTransfer}>
+
+              <div className="form-group">
+
+                <label>Login Password</label>
+
+                <input
+                  type="password"
+                  autoFocus
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError("");
+                  }}
+                />
+
+              </div>
+
+              {error && (
+                <div className="modal-error">
+                  ⚠ {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="confirm-transfer-btn"
+                disabled={transferring}
+              >
+                {transferring
+                  ? "Processing Transfer..."
+                  : "Confirm & Transfer"}
+              </button>
+
+            </form>
+
+            <div className="modal-security">
+              🔒 Your password is securely verified
+              and is never stored.
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
+
+      {/* =====================================================
+          SUCCESS RECEIPT
+          ===================================================== */}
+
+      {showReceipt && receipt && (
+
+        <div className="modal-overlay receipt-overlay">
+
+          <div className="transaction-receipt">
+
+            <div className="receipt-success-icon">
+              ✓
+            </div>
+
+            <p className="receipt-success-label">
+              TRANSFER SUCCESSFUL
+            </p>
+
+            <h2>
+              ₹ {formatAmount(receipt.amount)}
+            </h2>
+
+            <p className="receipt-message">
+              Money has been transferred successfully.
+            </p>
+
+            <div className="receipt-divider"></div>
+
+            <div className="receipt-row">
+              <span>From</span>
+              <strong>
+                {user?.name || "Account Holder"}
+              </strong>
+            </div>
+
+            <div className="receipt-row">
+              <span>To</span>
+              <strong>
+                {receipt.payee?.name || "-"}
+              </strong>
+            </div>
+
+            <div className="receipt-row">
+              <span>Bank</span>
+              <strong>
+                {receipt.payee?.bankName || "-"}
+              </strong>
+            </div>
+
+            <div className="receipt-row">
+              <span>Account</span>
+              <strong>
+                {maskAccountNumber(
+                  receipt.payee?.accountNumber
+                )}
+              </strong>
+            </div>
+
+            <div className="receipt-row">
+              <span>Transfer Type</span>
+              <strong>
+                <span className="receipt-type">
+                  {receipt.transferType}
+                </span>
+              </strong>
+            </div>
+
+            <div className="receipt-row receipt-utr-row">
+              <span>UTR</span>
+              <strong>
+                {receipt.transaction?.utr ||
+                  receipt.transaction?.referenceId ||
+                  "-"}
+              </strong>
+            </div>
+
+            <div className="receipt-row">
+              <span>Date</span>
+              <strong>
+                {formatDate(
+                  receipt.transaction?.createdAt
+                )}
+              </strong>
+            </div>
+
+            <div className="receipt-row">
+              <span>Time</span>
+              <strong>
+                {formatTime(
+                  receipt.transaction?.createdAt
+                )}
+              </strong>
+            </div>
+
+            <div className="receipt-row">
+              <span>Description</span>
+              <strong>
+                {receipt.description}
+              </strong>
+            </div>
+
+            <div className="receipt-divider"></div>
+
+            <div className="receipt-balance">
+
+              <span>Available Balance</span>
+
+              <strong>
+                ₹ {formatAmount(receipt.balance)}
+              </strong>
+
+            </div>
+
+            <div className="receipt-actions">
+
+              <button
+                className="receipt-print-btn"
+                onClick={printReceipt}
+              >
+                🖨 Print / Save Receipt
+              </button>
+
+              <button
+                className="receipt-done-btn"
+                onClick={closeReceipt}
+              >
+                Done
+              </button>
+
+            </div>
+
+            <p className="receipt-footer">
+              YES BANK • Secure Digital Banking
+            </p>
+
+          </div>
+
+        </div>
+
+      )}
 
     </div>
   );

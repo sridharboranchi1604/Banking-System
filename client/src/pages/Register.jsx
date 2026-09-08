@@ -9,6 +9,9 @@ function Register() {
     name: "",
     email: "",
     phone: "",
+    address: "",
+    pan: "",
+    aadhaar: "",
     password: "",
     confirmPassword: "",
   });
@@ -31,9 +34,22 @@ function Register() {
       !formData.name ||
       !formData.email ||
       !formData.phone ||
+      !formData.address ||
+      !formData.pan ||
+      !formData.aadhaar ||
       !formData.password
     ) {
       setMessage("Please fill all fields.");
+      return;
+    }
+
+    if (formData.pan.length !== 10) {
+      setMessage("PAN must be 10 characters.");
+      return;
+    }
+
+    if (formData.aadhaar.replace(/\s/g, "").length !== 12) {
+      setMessage("Aadhaar must be 12 digits.");
       return;
     }
 
@@ -49,6 +65,9 @@ function Register() {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
+        address: formData.address,
+        pan: formData.pan.toUpperCase(),
+        aadhaar: formData.aadhaar.replace(/\s/g, ""),
         password: formData.password,
       });
 
@@ -75,6 +94,7 @@ function Register() {
         </div>
 
         <h1>Create Account</h1>
+
         <p className="auth-subtitle">
           Open your secure banking account
         </p>
@@ -112,6 +132,43 @@ function Register() {
               placeholder="Enter your mobile number"
               value={formData.phone}
               onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Address</label>
+            <textarea
+              name="address"
+              placeholder="Enter your full address"
+              value={formData.address}
+              onChange={handleChange}
+              rows="3"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>PAN Number</label>
+            <input
+              type="text"
+              name="pan"
+              placeholder="Enter your PAN number"
+              value={formData.pan}
+              onChange={handleChange}
+              maxLength="10"
+              style={{ textTransform: "uppercase" }}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Aadhaar Number</label>
+            <input
+              type="text"
+              name="aadhaar"
+              placeholder="Enter your 12-digit Aadhaar number"
+              value={formData.aadhaar}
+              onChange={handleChange}
+              maxLength="12"
+              inputMode="numeric"
             />
           </div>
 

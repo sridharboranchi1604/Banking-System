@@ -28,6 +28,31 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
+    // ================================
+    // CUSTOMER ADDRESS
+    // ================================
+    address: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    // ================================
+    // KYC DETAILS
+    // ================================
+    pan: {
+      type: String,
+      required: true,
+      trim: true,
+      uppercase: true,
+    },
+
+    aadhaar: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
     accountNumber: {
       type: String,
       required: true,
@@ -38,6 +63,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       default: "BANK0001234",
+      uppercase: true,
     },
 
     accountType: {
@@ -49,6 +75,7 @@ const userSchema = new mongoose.Schema(
     branch: {
       type: String,
       default: "Main Branch",
+      trim: true,
     },
 
     balance: {

@@ -73,6 +73,32 @@ function Account() {
     return `•••• •••• ${account.slice(-4)}`;
   };
 
+  // Mask PAN - show only last 4 characters
+  const maskPAN = (pan) => {
+    if (!pan) return "-";
+
+    const value = String(pan).toUpperCase();
+
+    if (value.length <= 4) {
+      return value;
+    }
+
+    return `XXXXXX${value.slice(-4)}`;
+  };
+
+  // Mask Aadhaar - show only last 4 digits
+  const maskAadhaar = (aadhaar) => {
+    if (!aadhaar) return "-";
+
+    const value = String(aadhaar).replace(/\s/g, "");
+
+    if (value.length <= 4) {
+      return value;
+    }
+
+    return `XXXX XXXX ${value.slice(-4)}`;
+  };
+
   if (loading) {
     return (
       <div className="dashboard-loading">
@@ -291,6 +317,7 @@ function Account() {
             <span className="status-dot"></span>
 
             <div>
+
               <strong>
                 Account Active
               </strong>
@@ -298,6 +325,7 @@ function Account() {
               <small>
                 Banking access enabled
               </small>
+
             </div>
 
           </div>
@@ -316,6 +344,7 @@ function Account() {
             <div className="account-card-heading">
 
               <div>
+
                 <span>
                   AVAILABLE BALANCE
                 </span>
@@ -326,6 +355,7 @@ function Account() {
                     ? formatAmount(user.balance)
                     : "••••••••"}
                 </h2>
+
               </div>
 
               <button
@@ -420,6 +450,7 @@ function Account() {
               </strong>
             </div>
 
+
             <div>
               <span>
                 EMAIL ADDRESS
@@ -430,6 +461,7 @@ function Account() {
               </strong>
             </div>
 
+
             <div>
               <span>
                 MOBILE NUMBER
@@ -439,6 +471,40 @@ function Account() {
                 {user.phone || "-"}
               </strong>
             </div>
+
+
+            <div>
+              <span>
+                PAN
+              </span>
+
+              <strong>
+                {maskPAN(user.pan)}
+              </strong>
+            </div>
+
+
+            <div>
+              <span>
+                AADHAAR
+              </span>
+
+              <strong>
+                {maskAadhaar(user.aadhaar)}
+              </strong>
+            </div>
+
+
+            <div className="account-address">
+              <span>
+                ADDRESS
+              </span>
+
+              <strong>
+                {user.address || "-"}
+              </strong>
+            </div>
+
 
             <div>
               <span>
@@ -492,6 +558,7 @@ function Account() {
 
             </div>
 
+
             <div className="banking-detail-box">
 
               <span>
@@ -505,6 +572,7 @@ function Account() {
 
             </div>
 
+
             <div className="banking-detail-box">
 
               <span>
@@ -516,6 +584,7 @@ function Account() {
               </strong>
 
             </div>
+
 
             <div className="banking-detail-box">
 
@@ -529,6 +598,7 @@ function Account() {
 
             </div>
 
+
             <div className="banking-detail-box">
 
               <span>
@@ -540,6 +610,7 @@ function Account() {
               </strong>
 
             </div>
+
 
             <div className="banking-detail-box">
 

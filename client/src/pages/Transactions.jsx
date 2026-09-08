@@ -23,84 +23,181 @@ function Transactions() {
         setLoading(true);
         setError("");
 
-        const response = await api.get("/transactions", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await api.get(
+          "/transactions",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-        setTransactions(response.data.transactions || []);
+        setTransactions(
+          response.data.transactions || []
+        );
+
       } catch (err) {
-        console.error("Transaction loading error:", err);
+
+        console.error(
+          "Transaction loading error:",
+          err
+        );
 
         setError(
           err.response?.data?.message ||
             "Unable to load transactions."
         );
+
       } finally {
         setLoading(false);
       }
     };
 
     loadTransactions();
+
   }, [navigate, token]);
 
+
+  // =====================================================
+  // FORMAT DATE
+  // =====================================================
+
   const formatDate = (date) => {
+
     if (!date) return "-";
 
-    return new Date(date).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return new Date(date).toLocaleDateString(
+      "en-IN",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
+    );
   };
+
+
+  // =====================================================
+  // FORMAT TIME
+  // =====================================================
 
   const formatTime = (date) => {
+
     if (!date) return "-";
 
-    return new Date(date).toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return new Date(date).toLocaleTimeString(
+      "en-IN",
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+      }
+    );
   };
+
+
+  // =====================================================
+  // FORMAT AMOUNT
+  // =====================================================
 
   const formatAmount = (amount) => {
-    return Number(amount || 0).toLocaleString("en-IN", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
+
+    return Number(amount || 0).toLocaleString(
+      "en-IN",
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }
+    );
   };
 
-  const completedTransactions = transactions.filter(
-    (transaction) => transaction.status === "COMPLETED"
-  );
 
-  const totalTransferred = completedTransactions.reduce(
-    (total, transaction) =>
-      total + Number(transaction.amount || 0),
-    0
-  );
+  // =====================================================
+  // STATS
+  // =====================================================
 
-  const successfulCount = completedTransactions.length;
+  const completedTransactions =
+    transactions.filter(
+      (transaction) =>
+        transaction.status === "COMPLETED"
+    );
+
+
+  const totalTransferred =
+    completedTransactions.reduce(
+      (total, transaction) =>
+        total +
+        Number(transaction.amount || 0),
+      0
+    );
+
+
+  const successfulCount =
+    completedTransactions.length;
+
+
+  // =====================================================
+  // INITIAL
+  // =====================================================
 
   const getInitial = (name) => {
-    return name?.charAt(0)?.toUpperCase() || "P";
+
+    return (
+      name?.charAt(0)?.toUpperCase() ||
+      "P"
+    );
   };
 
+
+  // =====================================================
+  // UTR DISPLAY
+  // =====================================================
+
+  const getUTR = (transaction) => {
+
+    return (
+      transaction.utr ||
+      transaction.referenceId ||
+      "-"
+    );
+  };
+
+
+  // =====================================================
+  // LOGOUT
+  // =====================================================
+
   const handleLogout = () => {
-    localStorage.removeItem("bankingToken");
-    localStorage.removeItem("bankingUser");
+
+    localStorage.removeItem(
+      "bankingToken"
+    );
+
+    localStorage.removeItem(
+      "bankingUser"
+    );
 
     navigate("/login");
   };
+
+
+  // =====================================================
+  // REFRESH
+  // =====================================================
 
   const refreshTransactions = () => {
     window.location.reload();
   };
 
+
+  // =====================================================
+  // LOADING
+  // =====================================================
+
   if (loading) {
+
     return (
       <div className="banking-loading">
+
         <div className="loading-card">
 
           <img
@@ -111,70 +208,94 @@ function Transactions() {
 
           <div className="loading-spinner"></div>
 
-          <p>Loading transactions...</p>
+          <p>
+            Loading transactions...
+          </p>
 
         </div>
+
       </div>
     );
   }
 
+
   return (
     <div className="dashboard-page">
 
-      {/* ================= SIDEBAR ================= */}
+      {/* ==========================================
+          SIDEBAR
+      ========================================== */}
 
       <aside className="sidebar">
 
         <div className="sidebar-logo">
+
           <img
             src={yesBankLogo}
             alt="YES BANK"
           />
+
         </div>
+
 
         <nav className="sidebar-nav">
 
           <button
             className="nav-item"
-            onClick={() => navigate("/dashboard")}
+            onClick={() =>
+              navigate("/dashboard")
+            }
           >
             <span>⌂</span>
             Dashboard
           </button>
 
+
           <button
             className="nav-item"
-            onClick={() => navigate("/account")}
+            onClick={() =>
+              navigate("/account")
+            }
           >
             <span>👤</span>
             My Account
           </button>
 
+
           <button
             className="nav-item"
-            onClick={() => navigate("/transfer")}
+            onClick={() =>
+              navigate("/transfer")
+            }
           >
             <span>↗</span>
             Transfer Money
           </button>
 
+
           <button
             className="nav-item"
-            onClick={() => navigate("/payees")}
+            onClick={() =>
+              navigate("/payees")
+            }
           >
             <span>👥</span>
             Payees
           </button>
 
+
           <button
             className="nav-item active"
-            onClick={() => navigate("/transactions")}
+            onClick={() =>
+              navigate("/transactions")
+            }
           >
             <span>▤</span>
             Transactions
           </button>
 
         </nav>
+
 
         <div className="sidebar-security">
 
@@ -183,11 +304,19 @@ function Transactions() {
           </div>
 
           <div>
-            <strong>Secure Banking</strong>
-            <span>Your connection is protected</span>
+
+            <strong>
+              Secure Banking
+            </strong>
+
+            <span>
+              Your connection is protected
+            </span>
+
           </div>
 
         </div>
+
 
         <button
           className="logout-button"
@@ -200,7 +329,9 @@ function Transactions() {
       </aside>
 
 
-      {/* ================= MAIN ================= */}
+      {/* ==========================================
+          MAIN
+      ========================================== */}
 
       <main className="dashboard-main">
 
@@ -214,9 +345,12 @@ function Transactions() {
               Account Activity
             </p>
 
-            <h1>Transaction History</h1>
+            <h1>
+              Transaction History
+            </h1>
 
           </div>
+
 
           <div className="profile-circle">
             P
@@ -225,7 +359,9 @@ function Transactions() {
         </header>
 
 
-        {/* ================= HERO ================= */}
+        {/* ==========================================
+            HERO
+        ========================================== */}
 
         <section className="transactions-hero">
 
@@ -254,13 +390,21 @@ function Transactions() {
 
           </div>
 
+
           <div className="transaction-activity-badge">
 
             <span className="activity-dot"></span>
 
             <div>
-              <strong>Account Activity</strong>
-              <small>Up to date</small>
+
+              <strong>
+                Account Activity
+              </strong>
+
+              <small>
+                Up to date
+              </small>
+
             </div>
 
           </div>
@@ -268,7 +412,9 @@ function Transactions() {
         </section>
 
 
-        {/* ================= ERROR ================= */}
+        {/* ==========================================
+            ERROR
+        ========================================== */}
 
         {error && (
 
@@ -277,8 +423,15 @@ function Transactions() {
             <span>!</span>
 
             <div>
-              <strong>Unable to load transactions</strong>
-              <p>{error}</p>
+
+              <strong>
+                Unable to load transactions
+              </strong>
+
+              <p>
+                {error}
+              </p>
+
             </div>
 
           </div>
@@ -286,7 +439,9 @@ function Transactions() {
         )}
 
 
-        {/* ================= STATS ================= */}
+        {/* ==========================================
+            STATS
+        ========================================== */}
 
         <section className="transaction-stats">
 
@@ -298,7 +453,9 @@ function Transactions() {
 
             <div>
 
-              <span>TOTAL TRANSACTIONS</span>
+              <span>
+                TOTAL TRANSACTIONS
+              </span>
 
               <strong>
                 {transactions.length}
@@ -321,7 +478,9 @@ function Transactions() {
 
             <div>
 
-              <span>SUCCESSFUL TRANSFERS</span>
+              <span>
+                SUCCESSFUL TRANSFERS
+              </span>
 
               <strong>
                 {successfulCount}
@@ -344,10 +503,14 @@ function Transactions() {
 
             <div>
 
-              <span>TOTAL TRANSFERRED</span>
+              <span>
+                TOTAL TRANSFERRED
+              </span>
 
               <strong>
-                ₹{formatAmount(totalTransferred)}
+                ₹{formatAmount(
+                  totalTransferred
+                )}
               </strong>
 
               <small>
@@ -361,7 +524,9 @@ function Transactions() {
         </section>
 
 
-        {/* ================= TRANSACTIONS ================= */}
+        {/* ==========================================
+            TRANSACTIONS
+        ========================================== */}
 
         <section className="transactions-card">
 
@@ -384,9 +549,12 @@ function Transactions() {
 
             </div>
 
+
             <button
               className="refresh-button"
-              onClick={refreshTransactions}
+              onClick={
+                refreshTransactions
+              }
             >
               ↻ Refresh
             </button>
@@ -396,7 +564,9 @@ function Transactions() {
 
           {transactions.length === 0 ? (
 
-            /* EMPTY STATE */
+            /* ======================================
+               EMPTY STATE
+            ====================================== */
 
             <div className="transactions-empty">
 
@@ -419,7 +589,9 @@ function Transactions() {
 
               <button
                 className="primary-button"
-                onClick={() => navigate("/transfer")}
+                onClick={() =>
+                  navigate("/transfer")
+                }
               >
                 Transfer Money →
               </button>
@@ -430,7 +602,9 @@ function Transactions() {
 
             <>
 
-              {/* DESKTOP TABLE */}
+              {/* ==================================
+                  DESKTOP TABLE
+              ================================== */}
 
               <div className="transactions-table-wrapper">
 
@@ -453,7 +627,11 @@ function Transactions() {
                       </th>
 
                       <th>
-                        Reference ID
+                        Transfer Type
+                      </th>
+
+                      <th>
+                        UTR
                       </th>
 
                       <th>
@@ -468,124 +646,159 @@ function Transactions() {
 
                   </thead>
 
+
                   <tbody>
 
-                    {transactions.map((transaction) => (
+                    {transactions.map(
+                      (transaction) => (
 
-                      <tr key={transaction._id}>
+                        <tr
+                          key={
+                            transaction._id
+                          }
+                        >
 
-                        <td>
+                          {/* DATE */}
 
-                          <div className="transaction-date-block">
+                          <td>
 
-                            <strong>
-                              {formatDate(
-                                transaction.createdAt
-                              )}
-                            </strong>
-
-                            <span>
-                              {formatTime(
-                                transaction.createdAt
-                              )}
-                            </span>
-
-                          </div>
-
-                        </td>
-
-
-                        <td>
-
-                          <div className="transaction-payee">
-
-                            <div className="transaction-avatar">
-
-                              {getInitial(
-                                transaction.payeeName
-                              )}
-
-                            </div>
-
-                            <div>
+                            <div className="transaction-date-block">
 
                               <strong>
-                                {transaction.payeeName ||
-                                  "Payee"}
+                                {formatDate(
+                                  transaction.createdAt
+                                )}
                               </strong>
 
-                              <small>
-                                {transaction.payeeAccountNumber ||
-                                  "-"}
-                              </small>
+                              <span>
+                                {formatTime(
+                                  transaction.createdAt
+                                )}
+                              </span>
 
                             </div>
 
-                          </div>
-
-                        </td>
+                          </td>
 
 
-                        <td>
+                          {/* PAYEE */}
 
-                          <span className="transaction-description">
+                          <td>
 
-                            {transaction.description ||
-                              "Money Transfer"}
+                            <div className="transaction-payee">
 
-                          </span>
+                              <div className="transaction-avatar">
 
-                        </td>
+                                {getInitial(
+                                  transaction.payeeName
+                                )}
 
+                              </div>
 
-                        <td>
+                              <div>
 
-                          <span className="reference-id">
+                                <strong>
+                                  {transaction.payeeName ||
+                                    "Payee"}
+                                </strong>
 
-                            {transaction.referenceId}
+                                <small>
+                                  {transaction.payeeAccountNumber ||
+                                    "-"}
+                                </small>
 
-                          </span>
+                              </div>
 
-                        </td>
+                            </div>
 
-
-                        <td>
-
-                          <span className="debit-amount">
-
-                            - ₹
-                            {formatAmount(
-                              transaction.amount
-                            )}
-
-                          </span>
-
-                        </td>
+                          </td>
 
 
-                        <td>
+                          {/* DESCRIPTION */}
 
-                          <span
-                            className={`transaction-status ${
-                              transaction.status ===
+                          <td>
+
+                            <span className="transaction-description">
+
+                              {transaction.description ||
+                                "Money Transfer"}
+
+                            </span>
+
+                          </td>
+
+
+                          {/* TRANSFER TYPE */}
+
+                          <td>
+
+                            <span className="transfer-type-badge">
+
+                              {transaction.transferType ||
+                                "-"}
+
+                            </span>
+
+                          </td>
+
+
+                          {/* UTR */}
+
+                          <td>
+
+                            <span className="reference-id">
+
+                              {getUTR(
+                                transaction
+                              )}
+
+                            </span>
+
+                          </td>
+
+
+                          {/* AMOUNT */}
+
+                          <td>
+
+                            <span className="debit-amount">
+
+                              - ₹
+                              {formatAmount(
+                                transaction.amount
+                              )}
+
+                            </span>
+
+                          </td>
+
+
+                          {/* STATUS */}
+
+                          <td>
+
+                            <span
+                              className={`transaction-status ${
+                                transaction.status ===
+                                "COMPLETED"
+                                  ? "completed"
+                                  : "failed"
+                              }`}
+                            >
+
+                              {transaction.status ===
                               "COMPLETED"
-                                ? "completed"
-                                : "failed"
-                            }`}
-                          >
+                                ? "✓ Completed"
+                                : "✕ Failed"}
 
-                            {transaction.status ===
-                            "COMPLETED"
-                              ? "✓ Completed"
-                              : "✕ Failed"}
+                            </span>
 
-                          </span>
+                          </td>
 
-                        </td>
+                        </tr>
 
-                      </tr>
-
-                    ))}
+                      )
+                    )}
 
                   </tbody>
 
@@ -594,112 +807,160 @@ function Transactions() {
               </div>
 
 
-              {/* MOBILE CARDS */}
+              {/* ==================================
+                  MOBILE CARDS
+              ================================== */}
 
               <div className="mobile-transactions">
 
-                {transactions.map((transaction) => (
+                {transactions.map(
+                  (transaction) => (
 
-                  <article
-                    className="mobile-transaction-card"
-                    key={transaction._id}
-                  >
+                    <article
+                      className="mobile-transaction-card"
+                      key={
+                        transaction._id
+                      }
+                    >
 
-                    <div className="mobile-transaction-top">
+                      <div className="mobile-transaction-top">
 
-                      <div className="transaction-payee">
+                        <div className="transaction-payee">
 
-                        <div className="transaction-avatar">
+                          <div className="transaction-avatar">
 
-                          {getInitial(
-                            transaction.payeeName
-                          )}
+                            {getInitial(
+                              transaction.payeeName
+                            )}
+
+                          </div>
+
+                          <div>
+
+                            <strong>
+                              {transaction.payeeName ||
+                                "Payee"}
+                            </strong>
+
+                            <small>
+                              {transaction.payeeAccountNumber ||
+                                "-"}
+                            </small>
+
+                          </div>
 
                         </div>
+
+
+                        <span
+                          className={`transaction-status ${
+                            transaction.status ===
+                            "COMPLETED"
+                              ? "completed"
+                              : "failed"
+                          }`}
+                        >
+
+                          {transaction.status ===
+                          "COMPLETED"
+                            ? "✓ Completed"
+                            : "✕ Failed"}
+
+                        </span>
+
+                      </div>
+
+
+                      <div className="mobile-transaction-amount">
+
+                        - ₹
+                        {formatAmount(
+                          transaction.amount
+                        )}
+
+                      </div>
+
+
+                      <div className="mobile-transaction-details">
 
                         <div>
 
+                          <span>
+                            DATE
+                          </span>
+
                           <strong>
-                            {transaction.payeeName ||
-                              "Payee"}
+                            {formatDate(
+                              transaction.createdAt
+                            )}
                           </strong>
 
-                          <small>
-                            {transaction.payeeAccountNumber ||
+                        </div>
+
+
+                        <div>
+
+                          <span>
+                            TIME
+                          </span>
+
+                          <strong>
+                            {formatTime(
+                              transaction.createdAt
+                            )}
+                          </strong>
+
+                        </div>
+
+
+                        <div>
+
+                          <span>
+                            TRANSFER TYPE
+                          </span>
+
+                          <strong>
+                            {transaction.transferType ||
                               "-"}
-                          </small>
+                          </strong>
+
+                        </div>
+
+
+                        <div>
+
+                          <span>
+                            DESCRIPTION
+                          </span>
+
+                          <strong>
+                            {transaction.description ||
+                              "Money Transfer"}
+                          </strong>
+
+                        </div>
+
+
+                        <div>
+
+                          <span>
+                            UTR
+                          </span>
+
+                          <strong>
+                            {getUTR(
+                              transaction
+                            )}
+                          </strong>
 
                         </div>
 
                       </div>
 
-                      <span
-                        className={`transaction-status ${
-                          transaction.status ===
-                          "COMPLETED"
-                            ? "completed"
-                            : "failed"
-                        }`}
-                      >
-                        {transaction.status ===
-                        "COMPLETED"
-                          ? "✓ Completed"
-                          : "✕ Failed"}
-                      </span>
+                    </article>
 
-                    </div>
-
-
-                    <div className="mobile-transaction-amount">
-
-                      - ₹
-                      {formatAmount(
-                        transaction.amount
-                      )}
-
-                    </div>
-
-
-                    <div className="mobile-transaction-details">
-
-                      <div>
-                        <span>DATE</span>
-                        <strong>
-                          {formatDate(
-                            transaction.createdAt
-                          )}
-                        </strong>
-                      </div>
-
-                      <div>
-                        <span>TIME</span>
-                        <strong>
-                          {formatTime(
-                            transaction.createdAt
-                          )}
-                        </strong>
-                      </div>
-
-                      <div>
-                        <span>DESCRIPTION</span>
-                        <strong>
-                          {transaction.description ||
-                            "Money Transfer"}
-                        </strong>
-                      </div>
-
-                      <div>
-                        <span>REFERENCE ID</span>
-                        <strong>
-                          {transaction.referenceId}
-                        </strong>
-                      </div>
-
-                    </div>
-
-                  </article>
-
-                ))}
+                  )
+                )}
 
               </div>
 
@@ -710,7 +971,9 @@ function Transactions() {
         </section>
 
 
-        {/* ================= SECURITY NOTE ================= */}
+        {/* ==========================================
+            SECURITY NOTE
+        ========================================== */}
 
         <section className="transaction-security-banner">
 
@@ -726,8 +989,7 @@ function Transactions() {
 
             <p>
               Every transfer is authenticated and
-              recorded with a unique reference ID
-              for your records.
+              recorded with a unique UTR for your records.
             </p>
 
           </div>

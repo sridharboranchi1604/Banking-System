@@ -17,11 +17,13 @@ const transactionSchema = new mongoose.Schema(
     payeeName: {
       type: String,
       required: true,
+      trim: true,
     },
 
     payeeAccountNumber: {
       type: String,
       required: true,
+      trim: true,
     },
 
     amount: {
@@ -42,15 +44,33 @@ const transactionSchema = new mongoose.Schema(
       default: "COMPLETED",
     },
 
+    // UTR for new transactions
+    utr: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+    },
+
+    // Kept only for compatibility with old transactions
     referenceId: {
       type: String,
-      required: true,
       unique: true,
+      sparse: true,
+      trim: true,
+    },
+
+    // Transfer method
+    transferType: {
+      type: String,
+      enum: ["NEFT", "RTGS", "IMPS"],
+      required: true,
     },
 
     description: {
       type: String,
       default: "Money Transfer",
+      trim: true,
     },
   },
   {
