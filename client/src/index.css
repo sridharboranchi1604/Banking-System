@@ -12776,3 +12776,27 @@ textarea {
   }
 
 }
+
+/* =========================================================
+   FIX TRANSFER BALANCE CARD COLORS
+   ========================================================= */
+
+.transfer-balance-card {
+  color: #ffffff !important;
+}
+
+.transfer-balance-card p {
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+.transfer-balance-card h2 {
+  color: #ffffff !important;
+}
+
+.transfer-balance-card > div > span {
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+.transfer-balance-icon {
+  color: #ffffff !important;
+}
