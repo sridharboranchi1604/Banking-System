@@ -82,17 +82,14 @@ function Transactions() {
   // =====================================================
 
   const formatTime = (date) => {
+  if (!date) return "";
 
-    if (!date) return "-";
-
-    return new Date(date).toLocaleTimeString(
-      "en-IN",
-      {
-        hour: "2-digit",
-        minute: "2-digit",
-      }
-    );
-  };
+  return new Date(date).toLocaleTimeString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 
   // =====================================================
@@ -869,15 +866,15 @@ function Transactions() {
 
 
                       <div
-  className={
-    transaction.type === "CREDIT"
-      ? "mobile-transaction-amount credit-amount"
-      : "mobile-transaction-amount"
-  }
->
-  {transaction.type === "CREDIT" ? "+ ₹" : "- ₹"}
-  {formatAmount(transaction.amount)}
-</div>
+                        className={
+                          transaction.type === "CREDIT"
+                            ? "mobile-transaction-amount credit-amount"
+                            : "mobile-transaction-amount"
+                        }
+                      >
+                        {transaction.type === "CREDIT" ? "+ ₹" : "- ₹"}
+                        {formatAmount(transaction.amount)}
+                      </div>
 
 
                       <div className="mobile-transaction-details">

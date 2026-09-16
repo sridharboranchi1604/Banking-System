@@ -78,6 +78,7 @@ function Dashboard() {
     if (!date) return "";
 
     return new Date(date).toLocaleTimeString("en-IN", {
+      timeZone: "Asia/Kolkata",
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -136,16 +137,16 @@ function Dashboard() {
   };
 
   const totalTransferred = transactions
-  .filter(
-    (transaction) =>
-      transaction.status === "COMPLETED" &&
-      transaction.type === "DEBIT"
-  )
-  .reduce(
-    (total, transaction) =>
-      total + Number(transaction.amount || 0),
-    0
-  );
+    .filter(
+      (transaction) =>
+        transaction.status === "COMPLETED" &&
+        transaction.type === "DEBIT"
+    )
+    .reduce(
+      (total, transaction) =>
+        total + Number(transaction.amount || 0),
+      0
+    );
 
   if (loading) {
     return (
