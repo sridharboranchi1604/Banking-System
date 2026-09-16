@@ -364,7 +364,137 @@ const getTransactions = async (
 // EXPORTS
 // =========================================================
 
+
+// =========================================================
+// SELF DEPOSIT
+// =========================================================
+
+const selfDeposit = async (req, res) => {
+  const session = await mongoose.startSession();
+
+  try {
+    const { email, amount } = req.body;
+
+    if (!email || amount === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and amount are required.",
+      });
+    }
+
+    const depositAmount = Number(amount);
+
+    if (
+      !Number.isFinite(depositAmount) ||
+      depositAmount <= 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid deposit amount.",
+      });
+    }
+
+    const user = await User.findOne({
+      email: email.toLowerCase().trim(),
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User account not found.",
+      });
+    }
+
+    let transaction;
+
+    await session.withTransaction(async () => {
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: user._id },
+        {
+          $inc: {
+            balance: depositAmount,
+          },
+        },
+        {
+          session,
+          returnDocument: "after",
+        }
+      );
+
+      if (!updatedUser) {
+        throw new Error("USER_NOT_FOUND");
+      }
+
+      const utr = generateUTR();
+
+      const createdTransactions =
+        await Transaction.create(
+          [
+            {
+              userId: user._id,
+
+              payeeName: "Self Deposit",
+
+              payeeAccountNumber: "SELF-DEPOSIT",
+
+              amount: depositAmount,
+
+              type: "CREDIT",
+
+              status: "COMPLETED",
+
+              utr,
+
+              transferType: "SELF_DEPOSIT",
+
+              description: "Self Deposit",
+            },
+          ],
+          {
+            session,
+          }
+        );
+
+      transaction = createdTransactions[0];
+    });
+
+    const latestUser = await User.findById(user._id).select(
+      "name balance accountNumber email"
+    );
+
+    return res.status(200).json({
+      success: true,
+
+      message: "Self deposit completed successfully.",
+
+      transaction,
+
+      balance: latestUser.balance,
+    });
+
+  } catch (error) {
+    console.error("Self deposit error:", error);
+
+    if (error.message === "USER_NOT_FOUND") {
+      return res.status(404).json({
+        success: false,
+        message: "User account not found.",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Self deposit failed. Please try again.",
+    });
+
+  } finally {
+    await session.endSession();
+  }
+};
+
+
 module.exports = {
   transferMoney,
   getTransactions,
+  selfDeposit,
 };

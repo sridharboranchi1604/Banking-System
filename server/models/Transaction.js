@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema(
@@ -8,22 +9,23 @@ const transactionSchema = new mongoose.Schema(
       required: true,
     },
 
+    // Optional for self-deposit transactions
     payeeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Payee",
-      required: true,
+      required: false,
     },
 
     payeeName: {
       type: String,
-      required: true,
       trim: true,
+      default: "Self Deposit",
     },
 
     payeeAccountNumber: {
       type: String,
-      required: true,
       trim: true,
+      default: "SELF-DEPOSIT",
     },
 
     amount: {
@@ -32,9 +34,11 @@ const transactionSchema = new mongoose.Schema(
       min: 0.01,
     },
 
+    // DEBIT = Money transferred out
+    // CREDIT = Money deposited into the account
     type: {
       type: String,
-      enum: ["DEBIT"],
+      enum: ["DEBIT", "CREDIT"],
       default: "DEBIT",
     },
 
@@ -52,7 +56,7 @@ const transactionSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // Kept only for compatibility with old transactions
+    // Kept for compatibility with old transactions
     referenceId: {
       type: String,
       unique: true,
@@ -63,7 +67,7 @@ const transactionSchema = new mongoose.Schema(
     // Transfer method
     transferType: {
       type: String,
-      enum: ["NEFT", "RTGS", "IMPS"],
+      enum: ["NEFT", "RTGS", "IMPS", "SELF_DEPOSIT"],
       required: true,
     },
 
