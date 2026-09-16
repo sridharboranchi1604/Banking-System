@@ -135,7 +135,13 @@ function Dashboard() {
     return `XXXX XXXX ${value.slice(-4)}`;
   };
 
-  const totalTransferred = transactions.reduce(
+  const totalTransferred = transactions
+  .filter(
+    (transaction) =>
+      transaction.status === "COMPLETED" &&
+      transaction.type === "DEBIT"
+  )
+  .reduce(
     (total, transaction) =>
       total + Number(transaction.amount || 0),
     0

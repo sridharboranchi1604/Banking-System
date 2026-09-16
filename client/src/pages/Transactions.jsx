@@ -45,7 +45,7 @@ function Transactions() {
 
         setError(
           err.response?.data?.message ||
-            "Unable to load transactions."
+          "Unable to load transactions."
         );
 
       } finally {
@@ -115,20 +115,17 @@ function Transactions() {
   // STATS
   // =====================================================
 
-  const completedTransactions =
-    transactions.filter(
-      (transaction) =>
-        transaction.status === "COMPLETED"
-    );
+  const completedTransactions = transactions.filter(
+    (transaction) =>
+      transaction.status === "COMPLETED" &&
+      transaction.type === "DEBIT"
+  );
 
-
-  const totalTransferred =
-    completedTransactions.reduce(
-      (total, transaction) =>
-        total +
-        Number(transaction.amount || 0),
-      0
-    );
+  const totalTransferred = completedTransactions.reduce(
+    (total, transaction) =>
+      total + Number(transaction.amount || 0),
+    0
+  );
 
 
   const successfulCount =
@@ -761,13 +758,15 @@ function Transactions() {
 
                           <td>
 
-                            <span className="debit-amount">
-
-                              - ₹
-                              {formatAmount(
-                                transaction.amount
-                              )}
-
+                            <span
+                              className={
+                                transaction.type === "CREDIT"
+                                  ? "credit-amount"
+                                  : "debit-amount"
+                              }
+                            >
+                              {transaction.type === "CREDIT" ? "+ ₹" : "- ₹"}
+                              {formatAmount(transaction.amount)}
                             </span>
 
                           </td>
@@ -778,16 +777,15 @@ function Transactions() {
                           <td>
 
                             <span
-                              className={`transaction-status ${
-                                transaction.status ===
+                              className={`transaction-status ${transaction.status ===
                                 "COMPLETED"
-                                  ? "completed"
-                                  : "failed"
-                              }`}
+                                ? "completed"
+                                : "failed"
+                                }`}
                             >
 
                               {transaction.status ===
-                              "COMPLETED"
+                                "COMPLETED"
                                 ? "✓ Completed"
                                 : "✕ Failed"}
 
@@ -853,16 +851,15 @@ function Transactions() {
 
 
                         <span
-                          className={`transaction-status ${
-                            transaction.status ===
+                          className={`transaction-status ${transaction.status ===
                             "COMPLETED"
-                              ? "completed"
-                              : "failed"
-                          }`}
+                            ? "completed"
+                            : "failed"
+                            }`}
                         >
 
                           {transaction.status ===
-                          "COMPLETED"
+                            "COMPLETED"
                             ? "✓ Completed"
                             : "✕ Failed"}
 
@@ -871,14 +868,16 @@ function Transactions() {
                       </div>
 
 
-                      <div className="mobile-transaction-amount">
-
-                        - ₹
-                        {formatAmount(
-                          transaction.amount
-                        )}
-
-                      </div>
+                      <div
+  className={
+    transaction.type === "CREDIT"
+      ? "mobile-transaction-amount credit-amount"
+      : "mobile-transaction-amount"
+  }
+>
+  {transaction.type === "CREDIT" ? "+ ₹" : "- ₹"}
+  {formatAmount(transaction.amount)}
+</div>
 
 
                       <div className="mobile-transaction-details">

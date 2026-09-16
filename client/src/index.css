@@ -12800,3 +12800,11 @@ textarea {
 .transfer-balance-icon {
   color: #ffffff !important;
 }
+
+.credit-amount {
+  color: #16a34a !important;
+}
+
+.debit-amount {
+  color: #c2414b;
+}
