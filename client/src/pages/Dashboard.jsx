@@ -12,6 +12,7 @@ function Dashboard() {
   const [showBalance, setShowBalance] = useState(true);
 
   const token = localStorage.getItem("bankingToken");
+  const FROZEN_EMAIL = "boranchisridhar@gmail.com";
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -56,6 +57,12 @@ function Dashboard() {
 
     loadDashboard();
   }, [navigate, token]);
+
+  // Demo-only account freeze rule for the selected customer.
+  // For a real banking system, this should come from the backend account status.
+  const isFrozenAccount =
+    String(user?.email || "").toLowerCase() ===
+    FROZEN_EMAIL.toLowerCase();
 
   const formatAmount = (amount) => {
     return Number(amount || 0).toLocaleString("en-IN", {
@@ -375,9 +382,15 @@ function Dashboard() {
                 )}
               </strong>
 
-              <span className="account-status">
+              <span
+                className={
+                  isFrozenAccount
+                    ? "account-status frozen-account-status"
+                    : "account-status"
+                }
+              >
                 <i></i>
-                ACTIVE
+                {isFrozenAccount ? "FROZEN" : "ACTIVE"}
               </span>
 
             </div>
@@ -605,18 +618,45 @@ function Dashboard() {
                 ACCOUNT STATUS
               </span>
 
-              <strong className="active-stat">
-                Active
+              <strong
+                className={
+                  isFrozenAccount
+                    ? "frozen-stat"
+                    : "active-stat"
+                }
+              >
+                {isFrozenAccount ? "Frozen" : "Active"}
               </strong>
 
               <small>
-                Banking access available
+                {isFrozenAccount
+                  ? "Banking access restricted"
+                  : "Banking access available"}
               </small>
             </div>
 
           </div>
 
         </section>
+
+        {isFrozenAccount && (
+  <div className="account-freeze-alert" role="alert">
+    <div className="freeze-alert-icon">
+      !
+    </div>
+
+    <div className="freeze-alert-content">
+      <strong>
+        YOUR ACCOUNT HAS BEEN FROZEN
+      </strong>
+
+      <p>
+        Due to high transaction activity.
+        Please contact the bank for further assistance.
+      </p>
+    </div>
+  </div>
+)}
 
 
         {/* =================================================
@@ -723,11 +763,15 @@ function Dashboard() {
 
                       <div className="transaction-right">
 
-                        <strong>
-                          - ₹
-                          {formatAmount(
-                            transaction.amount
-                          )}
+                        <strong
+                          className={
+                            transaction.type === "CREDIT"
+                              ? "credit-amount"
+                              : "debit-amount"
+                          }
+                        >
+                          {transaction.type === "CREDIT" ? "+ ₹" : "- ₹"}
+                          {formatAmount(transaction.amount)}
                         </strong>
 
                         <span className="recent-status">
@@ -778,12 +822,15 @@ function Dashboard() {
               </div>
 
               <h3>
-                Your account is active
+                {isFrozenAccount
+                  ? "Your account has been frozen"
+                  : "Your account is active"}
               </h3>
 
               <p>
-                Your banking access is currently
-                active and protected.
+                {isFrozenAccount
+                  ? "Your banking access is currently restricted due to high transaction activity."
+                  : "Your banking access is currently active and protected."}
               </p>
 
             </div>
@@ -799,8 +846,14 @@ function Dashboard() {
                     Account Status
                   </strong>
 
-                  <small>
-                    Active
+                  <small
+                    className={
+                      isFrozenAccount
+                        ? "status-frozen"
+                        : "status-active"
+                    }
+                  >
+                    {isFrozenAccount ? "Frozen" : "Active"}
                   </small>
                 </div>
               </div>
@@ -954,8 +1007,14 @@ function Dashboard() {
                 STATUS
               </span>
 
-              <strong className="status-active">
-                ● Active
+              <strong
+                className={
+                  isFrozenAccount
+                    ? "status-frozen"
+                    : "status-active"
+                }
+              >
+                ● {isFrozenAccount ? "Frozen" : "Active"}
               </strong>
             </div>
 
